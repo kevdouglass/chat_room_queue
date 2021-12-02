@@ -1,0 +1,67 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block content %}
+<body>
+    <div class="card-header">
+        <h1>Waiting Room </h1>
+    </div>
+
+    <div class="row">
+        <div class="col-8">
+            
+            <a class="leave-room-btn" href="{% url 'chat-index' %}">Leave Room</a>
+            <!-- Append Child MESSAGE element every time chat-message is sent -->
+            <div class="chat-container">
+                <div id="chat-log">
+                </div>
+            </div>
+            
+            <div class="chat-container">
+                {% if request.user.is_authenticated %}
+                <input class="chat-msg-input" id="chat-message-input" type="text" size="50"><br>
+                <input class="chat-msg-button" id="chat-message-submit" type="button" value="Send"> 
+                {{ request.user.id|json_script:"request_user_id"}}
+                {{ request.user.username|json_script:"request_user_username"}}
+                {{ request.user.is_authenticated|json_script:"user_isAuthenticated"}}
+                
+                <script>
+                    console.log(JSON.parse(document.getElementById('request_user_username').textContent))
+                    console.log("isAuth: ", JSON.parse(document.getElementById('user_isAuthenticated').textContent))
+                </script>
+                {% else %}
+                <!-- Prompt to login/Signup -->
+                    {% include 'core/components/login_card.html' %}
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-4">
+            <div class="list-group"> 
+                
+                <h2>Queue
+                    <hr>
+                </h2>
+                {% for user in user_list %}
+                <div class="profile_avatar">
+                    <div id="waiting_queue" class="avatar avatar--small">
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <!-- End List-Group -->
+        </div>
+        <!-- End Sidebar -->        
+    </div>
+    <!-- End Row-1 -->
+
+
+    {{ room_name|json_script:"room-name" }}
+    
+    <script src="{% static 'chat/js/msg_room.js' %}"></script>
+</body>
+{% endblock %}
+
+<!-- block js_content %} 
+    % endblock %}
+-->

@@ -1,0 +1,111 @@
+.chat-container {
+    width: 50vw;
+    margin: 50px auto;
+    padding: 25px 10px;
+    background-color: #ffffff;
+    border-radius: 3px;
+    text-align: center;
+    box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22);
+}
+
+.heading {
+    font-weight: 'Work Sans', sans-serif;
+    font-size: 1.5rem;
+}
+
+.chat-msg-input {
+    border: none;
+    border-bottom: 2px solid #ddd;
+    line-height: 1.2rem;
+    transition: 0.3s;
+    margin-bottom: 40px;
+    width: 50%;
+}
+.chat-msg-input:focus {
+    outline: none;
+    border-bottom: 2px solid #333;
+    transition: 0.3s;
+}
+
+.chat-msg-button, .create_room_button {
+    background-color: #ffffff;
+    color: #9a4ef1;
+    border: 0.16em solid #9a4ef1;
+    border-radius: 2em;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+    width: 50%;
+}
+
+.chat-msg-button:hover, .create_room_button:hover {
+    background-color: #9a4ef1;
+    color: white;
+    transition: 0.3s;
+}
+
+.leave-room-btn {
+    background-color: #f5f5f5;
+    border-color: #aa0404;
+    color: #aa0404;
+    border: 0.16em solid #aa0404;
+    border-radius: 2em;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 00.3s;
+    width: 200px;
+    margin: 20px;
+    /* font-family: 'Poppins', sans-serif; */
+}
+.leave-room-btn:hover {
+    background-color: #aa0404;
+    color: #ffffff;
+    transition: 0.3s;
+}
+.emptyTextNode {
+    font-family: 'Work Sans', sans-serif;
+    font-size: 1.5rem;
+}
+
+
+.message {
+    color: #ffffff;
+    width: 35%;
+    padding: 8px;
+    border-radius: 2em;
+    margin: 15px 0px;
+    font-family: 'Poppins', sans-serif;
+}
+
+.sender {
+    /* background-color: #02c340 ; */
+    background-color: #62bd56;
+    margin-left: auto;
+}
+
+
+.receiver {
+    background-color: #71aeeb;
+    
+}
+
+
+.card {
+    margin: 5px;
+}
+
+.sidebar {
+    /* border-color: black; */
+    height: 100%;
+    border: 1px solid black;
+    margin: 5px;
+    padding-bottom: 20px;
+}

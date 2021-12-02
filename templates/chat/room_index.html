@@ -1,0 +1,86 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-8">
+
+                <!-- <div class="container">
+                </div> -->
+        
+
+                    <div class="card">
+                        <div class="card-header">
+                            <!-- <h5></h5> -->
+                            <H5>Create Chat Room to Enter?</H5>
+                        </div>
+                        <div class="card-body">
+                            
+                            <form action="" method="POST"> {% csrf_token %}
+                                {{newRoomForm.as_table}}
+                                <br>
+                                <button class="create_room_button" type="submit" name="create-room">Create</button>
+                            </form>
+                        </div>
+                    </div>
+             
+            <br><br>
+            <div class="col">
+
+                <h5>My Rooms
+                    <hr>
+                </h5>
+                <div class="list-group">                    
+                    {% for room in chat_rooms %}
+                    <!-- /chat/rooms/id/{{room.id}} -->
+                    <a href="/chat/rooms/{{ room.name }}" class="list-group-item list-group-item-action">
+                        {{ room.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            <!-- <div class="col"> -->
+                <!-- <h5>Games: <hr></h5>
+                <div class="list-group"> 
+                    <a href="" class="list-group-item list-group-item-action">
+                        chess-game
+                    </a>
+                </div> -->
+            <!-- </div> -->
+        </div>
+
+        <!-- Sidebar of Friends/Users -->
+        <div class="col-4">
+            <div class="container sidebar">
+
+                <div class="list-group">    
+                    <h5>Friends
+                        <hr>
+                    </h5>                
+                    {% for cur_user in users %}
+                    <div class="profile_avatar">
+                        <div class="avatar avatar--small">
+                            <a href="" class="list-group-item list-group-item-action">
+                                {{ cur_user }} <span class="badge badge-light">9</span>
+                                <span class="sr-only">unread messages</span>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>  
+            </div>
+        </div>
+                    <!-- End Col-2 -->
+    </div>
+    
+    <script src="{% static 'chat/js/room_index.js' %}"></script>
+    
+</body>
+{% endblock %}
+
+
+<!-- block js_content %} 
+    % endblock %}
+-->

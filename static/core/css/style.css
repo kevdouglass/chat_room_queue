@@ -1,0 +1,35 @@
+body {
+    /* background-color: aquamarine; */
+    background-color: #f5f5f5;
+}
+
+
+
+
+.avatar {
+    position: relative;
+    /* position: absolute; */
+    display: inline-block;
+    border-radius: 50%;
+    border: 2px solid grey;
+}
+/* #02c340 */
+
+/* var(--color-main); */
+.avatar.avatar--small:after {
+    width: 0.7rem;
+    height: 0.7rem;
+    bottom: 0px;
+    /* right: -6px; */
+}
+.avatar::after {
+    content: "";
+    display: block;
+    position: absolute;
+    background-color: gray; 
+    /* var(--color-gray); */
+    z-index: 111;
+    border-radius: 50%;
+    border: 0.3rem solid darkslategray;
+    /* var(--color-dark); */
+}

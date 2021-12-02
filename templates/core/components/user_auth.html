@@ -1,0 +1,22 @@
+{% if user.is_authenticated %}
+<ul class="navbar-nav">
+    <!-- We only want to Prompt user to LOGOUT -->
+    <li class="nav-item">
+        <span class="greeting-msg">
+            Hello, ({{ request.user }})
+        </span>
+        <span class="navbar-text">
+              <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+        </span>
+    </li>
+  </ul>
+  {% else %}
+    <ul class="navbar-nav">
+
+    <!--  User is NOT - authenticated so we want to ask them to Login/Signup/Join -->
+
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'login' %}">Login</a>
+        </li>
+</ul>
+{% endif %}
