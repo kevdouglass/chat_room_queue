@@ -33,8 +33,18 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
     #     'fetch_messages': fetch_messages,
     #     'new_message': new_message,
     # }
+    #####################################################
+    # Models.Room Sync_to_aSYNC methods
+    #####################################################
+
+
+    #####################################################
+    # End of Room Sync_to_aSYNC methods
+    #####################################################
+
 
     # Helpers
+    #####################################################
     @database_sync_to_async
     def get_User_obj(self):
         return User.objects.get(id=self.scope['user'].id, name=self.scope['user'].username)
@@ -43,7 +53,21 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
     def get_current_room(self, room_name):
         '''Return the current room the user is in'''
         return Room.objects.get(name=room_name)
+    
+    @database_sync_to_async
+    def get_real_time_users_from_room(self, room_name):
+        this_room = Room.objects.get(name=room_name)
+        this_room_real_time_users = []
+        all_real_time_users = this_room.users.exclude(id=self.user.id)
+        if this_room and all_real_time_users:
+            print("DB.real-Time: ", all_real_time_users)
+            print("\n\nYiup..")
 
+            for person in all_real_time_users:
+                print(person.id, person.username)
+                this_room_real_time_users.append({'id': person.id , 'username':person.username})
+        return this_room_real_time_users
+    
     @database_sync_to_async
     def fetch_saved_messages(self, room):
         """Retrieve CHAT objects (currently called 'Messages') that point to this.Room_name """
@@ -99,13 +123,40 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
             # content=chat_data['msg_content']
             # )
  
-    # @database_sync_to_async
-    async def pushUserToRoom(self, user, room_name):
-        print(f"Enqueue [User: {user.username}] to Room [{room_name}]")
-        # await Room.enqueue_user(room_name, user)
-        # await print("created_room: ", created_room, created_room.name, created_room.users, )
-        return await Room.enqueue_user(room_name, user)
 
+    @database_sync_to_async
+    def real_time_user_count_db(self, room_name):
+        """Returns list of ALL real-time users (including the user whose session this is)"""
+        # Get Current Room, check how many user are there
+        this_room = Room.objects.get(name=room_name)
+        if this_room is not None:
+            return this_room.users.count()
+        return 0
+
+    @database_sync_to_async
+    def dequeue_user_from_db(self, user, room_name):
+        '''
+        Need to Handle request.GET when User refreshes page, they should not necessarily be removed
+        '''
+        print('---'*25)
+        print("DB.DEQUE..")
+        this_room = Room.objects.get(name=room_name)
+        if user and this_room is not None:
+            print(f"Deque [{user.username}] from [{this_room.name}]")
+            this_room.users.remove( user )
+
+    @database_sync_to_async
+    def enqueue_user_to_db(self, room_name, user):
+        # Room.objects.get(name=room_name)
+        print("DB.enqueue_user")
+        this_room = Room.objects.get(name=room_name)
+        print("Room Name: ",this_room.name)
+        if this_room is not None: 
+            print(f"[{user.username}]: Added to Room ({room_name})")
+            this_room.users.add(user)
+        return this_room
+        # return [new_room_created, this_room]
+ 
     async def enqueue_user(self, user):
         '''waiting Q is differentiated by key-value:[list] dictionary of 
                 current room-names being keys and each key containing a list of user_names
@@ -116,34 +167,28 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
             # Check if this user is in waiting list for game-room yet
             # authenticated_users = User.objects.get(id=user.id)
         # await Room.enqueue_user(user)
-        await self.pushUserToRoom(self.user, self.room_name)
-        this_room = await self.get_current_room(self.room_name)
+        if self.scope['user'].is_authenticated:
+            print(f"\n[User: {user}] Authenticated!!")
+            this_room_queue = await self.enqueue_user_to_db(room_name=self.room_name,user=self.user)
+            # print(f"This->Room.Queue: {this_room_queue}")
 
-        print(f"FINISHED Created [Room: {this_room}]")
+            this_room_name = this_room_queue.name
+            if this_room_name not in self.user_queue:
+                self.user_queue[this_room_name] = []
+
+                # print("Waiting Queue: ", self.user_queue)
+                # print("User.is_authenticated When Room:{} == Room:{}".format(self.room_name,this_room.name ))
+                if user.username not in self.user_queue[this_room_name]:
+                    print(f"****\t\tAdding {str(user)} to UserQueue!!\n")
+                    self.user_queue[this_room_name].append(user.username)
+
         
-        this_room_name = this_room.name
-        if this_room_name not in self.user_queue:
-            self.user_queue[this_room_name] = []
-
-            # print("Waiting Queue: ", self.user_queue)
-            # print("User.is_authenticated When Room:{} == Room:{}".format(self.room_name,this_room.name ))
-            if user.username not in self.user_queue[this_room_name]:
-                print(f"****\n\t\tAdding {str(user)} to UserQueue!!\n")
-                self.user_queue[this_room_name].append(user.username)
-
-        
-
-    async def display_user_queue(self):
-        # print("\n\n***\tDisplay_user_queue!\n")
-        for item in self.user_queue:
-            print(item)
 
 
     async def connect(self):
         '''Make handshake & connect Consumer to WS'''
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = 'chat_%s' % self.room_name
-        print(f"(1) Django.Connecting \t(Room-Name, Room-Group-Name) : ({self.room_name}, {self.room_group_name}) ")        
         # Get current User obj
         self.user = self.scope['user']  # Other User is: ['url_route']['kwargs']['']
         self.user_id = self.user.id
@@ -154,18 +199,23 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
         )
         
         await self.enqueue_user(self.scope['user'])
-        print("Now: ", self.user_queue)
-        # await self.channel_layer.group_send(
-        #     self.room_group_name, {
-        #         "type": "user_broadcast",
-        #         "user_queue_nodes": self.user_queue,
-        #     }
-        # )
+        real_time_users = await self.get_real_time_users_from_room(self.room_name)
+        real_time_user_count = await self.real_time_user_count_db(self.room_name)
+        print(f"[Counting-({real_time_user_count})-real_time_users]: {real_time_users}")
+        # print("Now: ", self.user_queue)
+        await self.channel_layer.group_send(
+            self.room_group_name, {
+                "type": "user_broadcast",
+                "real_time_users": real_time_users,
+                "count" : real_time_user_count
+            }
+        )
         await self.accept()
 
 
     async def disconnect(self, disconnect_code):
         ''' Leave a Room (Group)'''
+        await self.dequeue_user_from_db(user=self.scope['user'], room_name=self.room_name)
         print(f"Channel info (DISCONNECT {self.scope['user'].username} FROM {self.room_name})")
         # removed_user = self.user_queue[self.room_name].pop( self.user_queue.index(self.scope['user'].username) )
         # print(self.user_queue)
@@ -178,17 +228,16 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
     async def receive(self, text_data):
         '''Receive message FROM WS:'''
         '''calls group_send message after determining which command waas called'''
-        print("(2) Django.Receive")
         text_data_json = json.loads(text_data)
-        print(f"Channel info (RECEIVE): {text_data_json}")
         await self.new_message(text_data_json['message'])
         this_room_name = await self.get_current_room(self.room_name)
         saved_chatroom_messages = await self.fetch_saved_messages(this_room_name)
-     
+        real_time_users = await self.get_real_time_users_from_room(self.room_name)
+        real_time_user_count = await self.real_time_user_count_db(self.room_name)
+        print(f"[Counting-({real_time_user_count})-real_time_users]: {real_time_users}")
+        
         # all_user_sessions = await self.get_all_logged_in_user_sessions(self.user.username)
         # print("SHOW All other Users: ".format(all_user_sessions))
-    ######################
-    # def send_chat_message(self, message):
 
         await self.channel_layer.group_send(
             self.room_group_name,
@@ -197,45 +246,34 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
                 'message': text_data_json['message'],
                 'user_id' : self.user_id,
                 'user_username' : self.user.username,
+                "real_time_users": real_time_users,
+                "count" : real_time_user_count,
                 # 'user_queue_nodes':self.user_queue,
                 # 'all_other_users' : self.all_other_users,
             }
         )
 
     async def chat_message(self, event):
-        '''Receives messages from our Group'''
-        # print("send-EVENT: \n{}".format(event))
+        '''Receives messages from our Group and Broadcast it to Client-Websocket'''
         # Send message to WS 
         await self.send(text_data=json.dumps({ 
             'message' : event['message'],
             'user_id' : event['user_id'],
             'user_username': event['user_username'],
-
+            "real_time_users": event['real_time_users'],
+            "count" : event['count'],
             # 'user_queue_nodes': event['user_queue_nodes'],
             # 'all_other_users' : event['all_other_users']
         }))
     
 
-    
-
-    async def display_users(self,user_list):
-        await print("Display All Current USers: ")
-        for row in user_list:
-            for user in row:
-                print(user)
 
     async def user_broadcast(self, event):
-        print("---"*75)
         await self.send(text_data=json.dumps({ 
-            'user_queue_nodes' : event['user_queue_nodes'],
+            "real_time_users": event['real_time_users'],
+            "count" : event['count'],
+            # 'user_queue_nodes' : event['user_queue_nodes'],
         }))
-        # self.groups
-        # isUser = True
-        # print("= new WebSocket.Connection: Channel.user_broadcast(): ")
-        # print("Broadcast.EVENT: ")
-        # print(f"User_Queue_Nodes: {event['user_queue_nodes']}")
-        # print("---"*75)
-
 
 
 

@@ -13,27 +13,6 @@ class Room(models.Model):
     name = models.CharField(max_length=75, blank=True, null=True)
     users = models.ManyToManyField(User, related_name='rooms')
 
-    @database_sync_to_async
-    def enqueue_user(self, room_name, user):
-        room, new_room_created = Room.objects.get_or_create(name=room_name)
-        room.users.add(user)
-        # return self.objects.create(name=room_name)
-        return new_room_created
-
-    @database_sync_to_async
-    def user_count(self, room_name):
-        # Get Current Room, check how many user are there
-        this_room = Room.objects.get(name=room_name)
-        if this_room.exists():
-            return this_room.users.count()
-        return 0
-
-    @database_sync_to_async
-    def dequeue_user(self, user, room_name):
-        this_room = Room.objects.get(name=room_name)
-        if this_room.exists():
-            this_room.users.remove( user )
-
 
 class Message(models.Model):
     """
