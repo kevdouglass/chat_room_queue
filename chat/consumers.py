@@ -10,6 +10,9 @@ from django.contrib.auth.models import User
 from django.contrib.sessions.models import Session
 from .models import Message, Room
 from django.utils import timezone
+from channels.auth import login
+from channels.auth import logout 
+from channels.auth import user_logged_in, user_logged_out
 
 class ChatMessageConsumer( AsyncWebsocketConsumer ):
     '''
@@ -154,6 +157,7 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
         if this_room is not None: 
             print(f"[{user.username}]: Added to Room ({room_name})")
             this_room.users.add(user)
+            
         return this_room
         # return [new_room_created, this_room]
  
@@ -162,15 +166,16 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
                 current room-names being keys and each key containing a list of user_names
                 of users inside
                  '''
-        # if user is an authenticated User
-        # if await User.objects.filter(id=user.id).exists():
-            # Check if this user is in waiting list for game-room yet
-            # authenticated_users = User.objects.get(id=user.id)
-        # await Room.enqueue_user(user)
-        if self.scope['user'].is_authenticated:
+        if not self.scope['user'].is_authenticated:
+            await login(self.scope, user)
+            print(f"LoginUser {self.scope['user']}")
+        else:
+
             print(f"\n[User: {user}] Authenticated!!")
             this_room_queue = await self.enqueue_user_to_db(room_name=self.room_name,user=self.user)
             # print(f"This->Room.Queue: {this_room_queue}")
+        # else:
+
 
             this_room_name = this_room_queue.name
             if this_room_name not in self.user_queue:
@@ -216,9 +221,30 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
     async def disconnect(self, disconnect_code):
         ''' Leave a Room (Group)'''
         await self.dequeue_user_from_db(user=self.scope['user'], room_name=self.room_name)
-        print(f"Channel info (DISCONNECT {self.scope['user'].username} FROM {self.room_name})")
+        # await self.d
+        # print("Request.METHOD: \t",self.scope["method"])
+        if self.scope['user'].is_authenticated:
+            print(f"Logging Out User: {self.user.username}")
+            await logout(self.scope)
+            # self.scope['user'].logout
+
+
+        disconnect_from_room = await self.get_current_room(self.room_name)
+        print(f"\n\n**DEBUG: Channel info (DISCONNECT {self.scope['user'].username} FROM {disconnect_from_room.name})")
+        # print(disconnect_from_room.users)
+        real_time_users__disconnect = await self.get_real_time_users_from_room(disconnect_from_room.name)
+        real_time_users_disconnect__count = await self.real_time_user_count_db(disconnect_from_room.name)
+        print("DISCONNECT.users: "+str(real_time_users__disconnect), "Count: "+str(real_time_users_disconnect__count))
+        print('---'*25)
         # removed_user = self.user_queue[self.room_name].pop( self.user_queue.index(self.scope['user'].username) )
         # print(self.user_queue)
+        await self.channel_layer.group_send(
+            self.room_group_name, {
+                "type": "user_broadcast",
+                "real_time_users": real_time_users__disconnect,
+                "count" : real_time_users_disconnect__count,
+            }
+        )
         await self.channel_layer.group_discard(
             self.room_group_name,
             self.channel_name 
