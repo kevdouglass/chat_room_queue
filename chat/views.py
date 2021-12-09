@@ -85,36 +85,23 @@ def fetch_room_data(request, room_name:str):
     async_to_sync(broadcast_users)(data)
     # broadcast_users(data)
     print("(2) BroadCast Users")
-    # return JsonResponse(data)
-    return render(request, 'chat/msg_room.html', data)
+    return JsonResponse(data)
+    # return render(request, 'chat/msg_room.html', data)
 
 
-# # create-rooms
-# def room(request, room_name:str):
-#     # print(f"Req.Method: {request}")
-#     # User.objects.exclude(username=request.user.username)
-#     this_channel = get_channel_layer()
-#     print(this_channel)
-#     real_time_users = Room.objects.get(name=room_name).users.all()
-#     userHash = []
-#     for record in real_time_users:
-#         userHash.append({'id':record.id, 'username':record.username})
-#     data = {
-#         'room_name': room_name,
-#         'user_list': userHash,
-#         'user_name': request.user.username,
-#     }
-#     # return JsonResponse(data)
-#     return render(request, 'chat/msg_room.html', { 
-#         'room_name': room_name,
-#         'user_list': userHash,
-#         'user_name': request.user.username,
-#     })
-
-
-def fetch_rooms(request):
-    
-    return render(request, 'chat/room_index.html', { 
-        'chat_rooms': Room.objects.all(), #None, #Room.objects.get(id=room_id)
+# create-rooms
+def room(request, room_name:str):
+    # print(f"Req.Method: {request}")
+    # User.objects.exclude(username=request.user.username)
+    this_channel = get_channel_layer()
+    print(this_channel)
+    real_time_users = Room.objects.get(name=room_name).users.all()
+    userHash = []
+    for record in real_time_users:
+        userHash.append({'id':record.id, 'username':record.username})
+ 
+    return render(request, 'chat/msg_room.html', { 
+        'room_name': room_name,
+        'user_list': userHash,
+        'user_name': request.user.username,
     })
-

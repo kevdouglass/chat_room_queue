@@ -6,14 +6,49 @@ class ClientsList {
         this.saveClient = this.setSavedClient.bind(this);
     }
     setSavedClient(client_username, client_id){
-        console.log("[",client_id,"]: \tSaving User: ", client_username, " to ClientList")
+        // console.log("[",client_id,"]: \tSaving User: ", client_username, " to ClientList")
         this.client_list[ client_id ] = client_username;
     }
     getClients(){
         return this.client_list;
     }
     getCount(){
-        return this.client_list.length;
+        var count = 0
+        for(const key in this.client_list){
+            if (this.client_list.hasOwnProperty(key)){
+                count++;
+            }
+        }
+        return count;
+    }
+    UserQDisplay(){
+        // console.log("Client List: ",this.client_list);
+        for (var key in this.client_list){
+            var user = this.client_list[key];
+            console.log(user)
+            // this.pushUserQDisplay(user.username, user.id);
+        }
+    }
+    pushUserQDisplay(client_username, client_id){
+        // console.log("push User to Queue DIsplay!");
+        var WAITING_Q = document.getElementById('waiting_queue')
+        // real_time_user_queue.forEach(user=>{
+            
+            var isLiveBadge = document.createElement('span');
+            isLiveBadge.classList.add('badge', 'badge-light');
+            var list_group_item = document.getElementById('user-'+toString(client_id));
+            
+            list_group_item = document.createElement('a');
+            list_group_item.setAttribute('id','user-'+toString(client_id))
+            list_group_item.classList.add('list-group-item','list-group-item-action');
+            list_group_item.innerHTML = client_username;
+            var profile_avatar = document.createElement('div');
+            profile_avatar.classList.add('profile_avatar');
+            
+            list_group_item.appendChild(isLiveBadge)
+            console.log(list_group_item)
+            profile_avatar.appendChild(list_group_item);
+            WAITING_Q.appendChild(profile_avatar);
     }
     // updateClient
 }
@@ -54,17 +89,14 @@ let prev_waiting_queue_length = connected_clients.getClients()
 
 
 function createUserNodes(real_time_user_queue, user_id, live_user_count){
-    console.log("[Create] User Node. [",user_username," , ", user_id,"]")
+    // console.log("[Create] User Node. [",user_username," , ", user_id,"]")
     producers_clients = connected_clients.getClients();
     var hash = {};
     var unique = [];
     // connected_clients.setSavedClient
-    console.log("Producer: ", producers_clients)
+    // console.log("Producer: ", producers_clients)
     // for (let index = 0; index < real_time_user_queue.length; index++) {
-        WAITING_Q = document.getElementById('waiting_queue')
-        // real_time_user_queue.forEach(user=>{
-            
-            
+        var WAITING_Q = document.getElementById('waiting_queue')
             
             for (let index = 0; index < real_time_user_queue.length; index++) {
                 const user = real_time_user_queue[index];
@@ -83,14 +115,14 @@ function createUserNodes(real_time_user_queue, user_id, live_user_count){
                     profile_avatar.classList.add('profile_avatar');
                     
                     list_group_item.appendChild(isLiveBadge)
-                            console.log(list_group_item)
-                            profile_avatar.appendChild(list_group_item);
-                            WAITING_Q.appendChild(profile_avatar); 
-                        }
+                    console.log(list_group_item)
+                    profile_avatar.appendChild(list_group_item);
+                    WAITING_Q.appendChild(profile_avatar); 
+                }
                         // list_group_item.remove();
-                    }
-                    // })
-                    console.log(hash)
+            }
+
+                    console.log("hash", hash)
                     hash = {};
                     PREV_LENGTH = live_user_count;
     
@@ -116,12 +148,44 @@ function createMessageNode(message, sender, user_user_id ){
     
     messageNode.appendChild(user_name_span);
     chatLog.appendChild( messageNode );
-    console.log("WS.onMessage() : {END}");
+    // console.log("WS.onMessage() : {END}");
 
     if (document.getElementById('emptyTextNode')){
         document.getElementById('emptyTextNode').remove();
     }
 }
+
+
+const fetchPath = (endpoint) => {
+    return window.location.origin
+            +window.location.pathname
+            +endpoint;
+}
+console.log("href: ", fetchPath('fetch'))
+$.ajax({
+    method: 'GET',
+    url: fetchPath('fetch/'),
+    success: function(response){
+        let wsData = response
+        let rtUserHash = {};
+        console.log("Success!", wsData)
+        for(let key in wsData){
+            if (wsData.hasOwnProperty(key)){
+                console.log(wsData[key])
+            }
+        }
+        console.log("Chat Socket AJAX __INIT__")
+        chatSocket.onopen = function(ws_event){
+            console.warn("Ajax.onOpen EVENT: ",ws_event)
+            chatSocket.onmessage = function(event){
+                event.preventDefault();
+                // let jsonData = JSON.parse(event)
+                console.warn("Ajax.onOpen.onMessage EVENT: ",event)
+            }
+        }
+    }
+})
+
 
 chatSocket.onopen = function(ws_event){
     // if self.postMessage
@@ -130,7 +194,8 @@ chatSocket.onopen = function(ws_event){
     const request_user_id = JSON.parse(document.getElementById('request_user_id').textContent)
     const request_user_username = JSON.parse(document.getElementById('request_user_username').textContent)
     connected_clients.setSavedClient( request_user_username, request_user_id );
-
+    // connected_clients.pushUserQDisplay(request_user_username, request_user_id);
+    // connected_clients.UserQDisplay();
     // waiting_queue
     // var connected_clients.getClients()
     // createUserNodes(request_user_username, request_user_id);
@@ -148,11 +213,17 @@ chatSocket.onmessage = function(event) {
     user_username = data['user_username']
     
     count = data['count'];
-    // for (const key in waiting_queue_users) {
-        // console.log(waiting_queue_users[key])
-        // connected_clients.setSavedClient( waiting_queue_users[key].username, waiting_queue_users[key].id );
-    // }
+    console.log(connected_clients.getCount())
+    if (connected_clients.getCount() < data.count){
 
+        connected_clients.UserQDisplay();
+    }else{
+
+        for (const key in waiting_queue_users) {
+            console.log("MESSAGE:", waiting_queue_users[key])
+            connected_clients.setSavedClient( waiting_queue_users[key].username, waiting_queue_users[key].id );
+        }
+    }
     
     
     
@@ -169,7 +240,7 @@ chatSocket.onmessage = function(event) {
         //     // console.log(user)
         //     user.username
         // }));
-        createUserNodes(waiting_queue_users, user_user_id, data.count);
+        // createUserNodes(waiting_queue_users, user_user_id, data.count);
         if (data.message){
             createMessageNode(data.message, user_username, user_user_id);
         }    
@@ -182,11 +253,7 @@ chatSocket.onmessage = function(event) {
 chatSocket.onclose = function(e) {
     // Headers. Check for nethod type of Request.GET, if so, it is a page refresh and dont CLOSE socket!!
     // e.preventDefault();
-var queue =    document.getElementById('waiting_queue').lastElementChild
-var last_child = queue.lastChild
-var first_child = queue.firstChild
-console.warn("last_child",last_child)    
-console.warn("first_child",first_child)
+
 console.error('Chat socket closed unexpectedly');
 };
 
