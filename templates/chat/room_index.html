@@ -61,12 +61,17 @@
                     </h5>                
                     {% for cur_user in users %}
                     <div class="profile_avatar">
-                        <div class="avatar avatar--small">
-                            <a href="" class="list-group-item list-group-item-action">
-                                {{ cur_user }} <span class="badge badge-light">9</span>
-                                <span class="sr-only">unread messages</span>
-                            </a>
-                        </div>
+                        <!-- <div class="avatar avatar--small">
+                        </div> -->
+                        <a href="" class="list-group-item list-group-item-action">
+                            <span class="badge badge-light">
+                                <span class="sr-only">
+                                    unread messages
+                                </span>
+                                9
+                            </span>
+                            {{ cur_user }} 
+                                </a>
                     </div>
                     {% endfor %}
                 </div>  

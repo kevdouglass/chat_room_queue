@@ -1,0 +1,92 @@
+    @database_sync_to_async
+    def get_all_logged_in_user_sessions(self, this_user_username='Anonymous'):
+        # print("\n\nGet ALl Other Users:")
+        print("Query Sessions Model")
+        # Query all non-expired Sessions
+        
+        sessions = Session.objects.filter(expire_date__gte=timezone.now())
+        current_logged_in_user_ids = []
+        for sess in sessions:
+            data = sess.get_decoded()
+            print("DAYTA: ", data['_auth_user_id'])
+            session_user_id = data['_auth_user_id']
+            current_logged_in_user_ids.append(session_user_id)
+            
+        print("Display cur_User_ids; {}".format(current_logged_in_user_ids))
+        return current_logged_in_user_ids
+        # return User.objects.filter(idcurrent_logged_in_user_ids)
+        # Query Message Model to see which user is currently logged in to this channel?
+        # this_message_room = Message.objects.filter(room=self.room_name)
+        # print(f"******This->MessageRoom: {this_message_room}\n\n")
+    ######################################################################
+    ######################################################################
+    ######################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ######################################################################
+    ######################################################################
+    ######################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ######################################################################
+    ######################################################################
+    ######################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ######################################################################
+    ######################################################################
+    ######################################################################
