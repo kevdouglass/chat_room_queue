@@ -1,3 +1,4 @@
+from django.http import request
 from django.http.response import JsonResponse
 from django.shortcuts import redirect, render
 from .models import Room
@@ -88,11 +89,23 @@ def fetch_room_data(request, room_name:str):
     return JsonResponse(data)
     # return render(request, 'chat/msg_room.html', data)
 
-
+def removeStaleUsers(request, room_name):
+    room = Room.objects.get(name=room_name)
+    user_list = room.users.all()
+    # print(type(user_list))
+    print("REQUEST: ", request.user)
+    for user in user_list:
+        if request.user.username == user.username:
+            print(user.username)
+            del user
+        # user.
+    print("[Manage.py Stale Users]: ",Room.objects.get(name=room_name).users)
 # create-rooms
 def room(request, room_name:str):
     # print(f"Req.Method: {request}")
     # User.objects.exclude(username=request.user.username)
+    removeStaleUsers(request, room_name)
+
     this_channel = get_channel_layer()
     print(this_channel)
     real_time_users = Room.objects.get(name=room_name).users.all()

@@ -289,8 +289,8 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
         print(f"Logging Out User: {self.user.username}")
         # print('---'*25)
         real_time_users__disconnect = await self.get_real_time_users_from_room(disconnect_from_room.name)
-        print(await self.get_real_time_users_from_room(disconnect_from_room.name))
         real_time_users_disconnect__count = await self.real_time_user_count_db(disconnect_from_room.name)
+        
         # removed_user = self.user_queue[self.room_name].pop( self.user_queue.index(self.scope['user'].username) )
         # print(self.user_queue)
         

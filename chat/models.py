@@ -12,6 +12,13 @@ class Room(models.Model):
     '''
     name = models.CharField(max_length=75, blank=True, null=True)
     users = models.ManyToManyField(User, related_name='rooms')
+    
+    def deleteStaleUsers(self):
+        # Get ALL Room Names
+        Room.users.__delattr__()
+        # delete()
+        # Once we have the Room Names, we access that particular Rooms Users
+        # Room.objects.filter(pub_date__year=2005).delete()
 
 
 class Message(models.Model):
@@ -38,6 +45,7 @@ class Message(models.Model):
     def pre_load(self):
         '''load the most recent 10 messages'''
         return Message.objects.order_by('-timestamp').all()[:10]
+
 
     
     
