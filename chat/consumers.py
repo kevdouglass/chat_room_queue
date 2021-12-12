@@ -167,7 +167,7 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
         return 0
 
     @database_sync_to_async
-    def dequeue_user_from_db(self, user:User, room_name:str) -> None:
+    def dequeue_user_from_db(self, user:User, room_name:str):
         '''
             PARAMS: user:User, room_name:string
             RETURN: NONE
@@ -177,22 +177,18 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
                 > Given a room_name, we make a DB.connection. If the Room object corresponding to 
                     the given room_name EXISTS and the User is an authenticated User (not Anonymous), Remove them from the Room.users specified with 
                     the ManyToMany relation with Users->Room (MxN) 
-        *TODO
-        Need to Handle request.GET when User refreshes page, they should not necessarily be removed
+
         '''
-        print('---'*75)
+        # print('---'*75)
         this_room = Room.objects.get(name=room_name)
         print(f"\n\n\nDeque [{user.username}] from [{this_room.name}]")
-        print('---'*25)
+        # print('---'*25)
         if user and this_room is not None:
-            print(f"DB.Deque(2) [{user.username}] from [{this_room.name}]")
-            print('---'*25)
+            # print(f"DB.Deque(2) [{user.username}] from [{this_room.name}]")
+            # print('---'*25)
             this_room.users.remove( user )
         user_li = async_to_sync(self.get_real_time_users_from_room)(this_room.name)
-        # self.get_real_time_users_from_room(this_room.name)
-        print(f"DB.Deque(3) {user_li}")
-        # print(f"DB.Deque(2) [{user.username}] from [{this_room.name}]")
-        print('---'*25)
+        return user
     
     
     @database_sync_to_async
@@ -282,12 +278,13 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
                 > Asynchronous. Called upon User Leave a Room & During Refresh state (Group).
         '''
         disconnect_from_room = await self.get_current_room(self.room_name)
-        await self.dequeue_user_from_db(user=self.scope['user'], room_name=self.room_name)
+        removed_user = await self.dequeue_user_from_db(user=self.scope['user'], room_name=self.room_name)
+        this_removed_user = {'id':removed_user.id, 'username':removed_user.username}
         # if self.scope['user'].is_authenticated:
         # await logout(self.scope)
             # self.scope['user'].logout
         # print('---'*25)
-        print(f"Logging Out User: {self.user.username}")
+        print(f"Logging Out User: {this_removed_user['username']}")
         # print('---'*25)
         real_time_users__disconnect = await self.get_real_time_users_from_room(disconnect_from_room.name)
         real_time_users_disconnect__count = await self.real_time_user_count_db(disconnect_from_room.name)
@@ -303,7 +300,7 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
                 "type": "user_broadcast",
                 "kind": "userDisconnectedNotification",
                 "real_time_users": real_time_users__disconnect,
-                # "real_time_users": record_user,
+                "removed_user": this_removed_user,
                 "count" : real_time_users_disconnect__count,
             }
         )
@@ -373,33 +370,35 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
             DESCRIPTION:
                 > Asynchronous. Broadcast User(s) after they were Enqueud during the WS_server.CONNECT event to Client-Side Websocket.Receive. 
         """
-        print("\n\nEVENT: ", event)
+        # print("\n\nEVENT: ", event)
         # print("\n\ncountrr",event['countrr']) 
         # print(f"Consumer.Room_Group_Name: [{self.room_group_name}]")
         if event['kind'] == "userDisconnectedNotification":
-            # Broadcast the Disconnect (i.e. what users are still live)
             print("userDisconnectedNotification Here..")
-            print("\n\n",event['real_time_users'])
+            print(f"Removed user: [{event['removed_user']}]")
+            # print("\n\n",event['real_time_users'])
+            # Broadcast the Disconnected User
+            await self.send(text_data=json.dumps({
+                "kind" : "userDisconnectedNotification",
+                 "removed_user": event['removed_user'],
+            }))
+
+            # # Broadcast Users that are still live)
             for record_user in event['real_time_users']:
-                print(len(event['real_time_users']))
-                print(record_user)
+                # print(len(event['real_time_users']))
+                # print(record_user)
                 await self.send(text_data=json.dumps({
                     "kind" : "userDisconnectedNotification",
                     # "real_time_user": self.scope['user'].username,
                     "real_time_user": record_user,
+                   
                 }))
         elif event['kind'] == "userConnectedNotification":
             for record_user in event['real_time_users']:
-                # print(len(event['real_time_users']))
-                # print("userConnectedNotification Here..")
-                # print(record_user)
+
                 await self.send(text_data=json.dumps({ 
                     "kind": "userConnectedNotification",
                     "real_time_user": record_user,
-                    # "real_time_user" : self.scope['user'].username,
-                    # "real_time_users": event['real_time_users'],
-                    # "count" : event['count'],
-                    # 'user_queue_nodes' : event['user_queue_nodes'],
                 }))
 
     async def user_notification(self, event:dict) -> None:
@@ -410,16 +409,11 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
             DESCRIPTION:
                 > Asynchronous. Broadcast User(s) after they were Enqueud during the WS_server.CONNECT event to Client-Side Websocket.Receive. 
         """
-        print("EVENT: ", event)
-        print(f"Consumer.Room_Group_Name: [{self.room_group_name}]")
+
         for rt_user in event['real_time_users']:
-        # rt_user = event['real_time_users']
             await self.send(text_data=json.dumps({ 
                 "kind": "userConnectedNotification",
-                # "real_time_user": self.scope['user'].username,
-                # "count" : event['count'],
                 "real_time_user": rt_user,
-                # 'user_queue_nodes' : event['user_queue_nodes'],
             }))
 
 

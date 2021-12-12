@@ -14,13 +14,45 @@
             <div class="chat-container">
                 <div id="chat-log">
                     {% for chat in saved_chats.all %}
-                        {% if chat.user.username == request.user.username %}
-                            <div class="message sender">
-                                {{chat.content}}
+                    {% if chat.user.username == request.user.username %}
+                    <div class="container">
+                    <div class="message sender">
+                            <img src="/w3images/bandmember.jpg" alt="{{chat.user.username}}">
+                            <div class="message">
+                                <!-- <span class="badge badge-light">
+                                    {{chat.user.username}}
+                                  </span>                             -->
+
+                                <p>{{chat.content}}</p>
+                                <span class="time-right">11:00</span>
                             </div>
+                        </div>
+                      </div>
+                      <!-- <div class="input-group mb-3">
+                                    {{chat.content}}
+                                    
+                                </div> -->
+<!--                                 
+                                <span class="">
+                                        <div class="input-group-prepend">
+                                          <span class="input-group-text" id="basic-addon1">{{chat.username}}</span>
+                                        </div>
+                                        <input type="text" class="form-control" placeholder="Username" aria-label="Username" aria-describedby="basic-addon1">
+                                      </div>
+                                </span> -->
+                            <!-- </div> -->
                         {% else %}
+                        <div class="container darker">
                             <div class="message receiver">
-                                {{chat.content}}
+                                <!-- {{chat.content}} -->
+                              <img src="/w3images/avatar_g2.jpg" alt="{{chat.user.username}}" class="right">
+                              <div class="message">
+
+                                  <p>{{chat.content}}</p>
+                                  <span class="time-left">11:01</span>
+                                </div>
+                            </div>
+
                             </div>
                         {% endif %}
                     {% endfor %}
