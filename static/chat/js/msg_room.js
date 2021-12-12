@@ -32,20 +32,15 @@ class ClientsList {
     updateUserQDisplay(live_userData, removed_userData){
         console.log("[Update] UserQueue");
         console.log(", [removed_userData] ", removed_userData)
-        // var list_group_item = document.getElementById('user-'+live_userData.id);
         var remove_list_group_item = document.getElementById('user-'+removed_userData.id).remove();
-        console.warn(live_userData);
-
     }
+
     pushUserQDisplay(client_username, client_id){
         console.log("[PUSH]"+ client_username +" UserQueue");    
         var cur_user = document.querySelectorAll('#user-'+client_id);
-
-                
             // var isLiveBadge = document.createElement('span');
             // isLiveBadge.classList.add('badge', 'badge-light');
             var list_group_item = document.getElementById('user-'+client_id);
-            // // var list_group_item = document.getElementById('user-'+toString(client_id));
             if (!list_group_item){
                 
                 var list_group_item = document.createElement('a');
@@ -63,7 +58,6 @@ class ClientsList {
                 wq.appendChild(list_group_item)
                 return;
             }
-            // console.log("\n\n" +`[${client_username}]` +" ALREADY EXISTs... \n\n")
         
     }
     // updateClient
@@ -119,7 +113,6 @@ function createMessageNode(message, sender, user_user_id ){
     const this_user_user_id = JSON.parse(document.getElementById('request_user_id').textContent);    
     
     const messageNode = document.createElement('div');
-    // messageNode.setAttribute('id', 'messageNode')
     const user_name_span = document.createElement('small');
     
     user_name_span.innerText = '['+sender+']:\n'; 
@@ -134,10 +127,9 @@ function createMessageNode(message, sender, user_user_id ){
     }else{
         messageNode.classList.add('message', 'receiver');
     }
-    
+
     msg_content.prepend(user_name_span);
     msg_content.appendChild(messageNode);
-    
     messageNode.appendChild(user_name_span);
     chatLog.appendChild( messageNode );
 
@@ -151,30 +143,28 @@ const fetchPath = (endpoint) => {
     return window.location.origin
             +window.location.pathname
             +endpoint;
+}
+
+        
+
+userNotifySocket.onopen = function(ws_event){
+    
+    userNotifySocket.onmessage = function(event){
+        let jsonData = JSON.parse(event.data)
+
+        if(jsonData.kind == "userConnectedNotification"){
+            connected_clients.pushUserQDisplay(jsonData.real_time_user.username, jsonData.real_time_user.id );
         }
+        else if(jsonData.kind == "userDisconnectedNotification"){
+            console.log("[userDisconnectNotification] ", jsonData );
+            // removed_user
+            if (jsonData.removed_user){
 
-        
-        
-        userNotifySocket.onopen = function(ws_event){
-            
-            userNotifySocket.onmessage = function(event){
-                let jsonData = JSON.parse(event.data)
-                console.log("[Notify.KIND]: "+jsonData.kind)
-                if(jsonData.kind == "userConnectedNotification"){
-                    connected_clients.pushUserQDisplay(jsonData.real_time_user.username, jsonData.real_time_user.id );
-                }
-                else if(jsonData.kind == "userDisconnectedNotification"){
-                    
-                    console.log("[userDisconnectNotification] ", jsonData );
-                    // removed_user
-                    if (jsonData.removed_user){
-
-                        connected_clients.updateUserQDisplay(jsonData.real_time_user, jsonData.removed_user)
-                    }
-                }
-                // console.log(event.data)
+                connected_clients.updateUserQDisplay(jsonData.real_time_user, jsonData.removed_user)
             }
         }
+    }
+}
 
         
         
@@ -193,17 +183,11 @@ chatSocket.onmessage = function(event) {
             createMessageNode(data.message, user_username, user_user_id);
         }    
     }
-    else{
-        // console.warn("EMPTY ROOM", waiting_queue_users)
-    }
 }
 
 
 chatSocket.onclose = function(e) {
-    // Headers. Check for nethod type of Request.GET, if so, it is a page refresh and dont CLOSE socket!!
-    // e.preventDefault();
-
-console.error('Chat socket closed unexpectedly');
+    console.error('Chat socket closed unexpectedly');
 };
 
 document.querySelector('#chat-message-input').focus();
@@ -217,8 +201,6 @@ document.querySelector('#chat-message-submit').onclick = function(e) {
     // console.log("Sending MESSAGE + USER to BACKEND.")
     const messageInputDom = document.querySelector('#chat-message-input');
     const message = messageInputDom.value;
-
-
     chatSocket.send(JSON.stringify({
         'message': message, 
     }));
