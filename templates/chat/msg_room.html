@@ -56,18 +56,23 @@
                 <div id='waiting_queue' class="profile_avatar">
                     <!--
                     -->
-                    {% for user in user_list %}
-
-                        <a href="" class="list-group-item list-group-item-action">
-                            <span class="badge badge-light">
-                                <span class="sr-only">
-                                    unread messages
-                                </span>
-                                {{ user.id }}
-                            </span>
-                            {{ user.username }} 
-                        </a>
-                        {%  endfor %} 
+                    
+                    {%  for user in user_list %}
+                    
+                    <a href="" id="user-{{user.id}}" class="list-group-item list-group-item-action">
+                                <div class="nodes">
+                                    <span class="badge badge-light">
+                                        <span class="sr-only">
+                                            unread messages
+                                        </span>
+                                        {{ user.id }}
+                                    </span>
+                                    {{ user.username }} 
+                                </div>
+                            </a>
+                    {% endfor %} 
+                            <!-- 
+                             -->
                 </div>
                 <!--  for user in user_list %}
                     <div id="waiting_queue_node" class="avatar avatar--small">
