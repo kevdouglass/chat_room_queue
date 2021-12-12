@@ -30,7 +30,7 @@ class ClientsList {
         }
     }
     pushUserQDisplay(client_username, client_id){
-        // console.log("push User to Queue DIsplay!");
+        console.log("push User to Queue DIsplay!");
         var WAITING_Q = document.getElementById('waiting_queue')
         // real_time_user_queue.forEach(user=>{
             
@@ -64,6 +64,11 @@ const chatSocket = new WebSocket(
     ENDPOINT +
     roomName + '/'
 );
+const userNotifySocket = new WebSocket(
+    BASE_URL +
+    ENDPOINT +
+    roomName + '/'
+);
 const chatLog = document.getElementById("chat-log");
 //this_user-name
 var PREV_LENGTH = 0;
@@ -85,48 +90,9 @@ function isMessageSender(ws_user_id, logged_in_user_id){
 }
 
 
-let prev_waiting_queue_length = connected_clients.getClients()
+// let prev_waiting_queue_length = connected_clients.getClients()
 
 
-function createUserNodes(real_time_user_queue, user_id, live_user_count){
-    // console.log("[Create] User Node. [",user_username," , ", user_id,"]")
-    producers_clients = connected_clients.getClients();
-    var hash = {};
-    var unique = [];
-    // connected_clients.setSavedClient
-    // console.log("Producer: ", producers_clients)
-    // for (let index = 0; index < real_time_user_queue.length; index++) {
-        var WAITING_Q = document.getElementById('waiting_queue')
-            
-            for (let index = 0; index < real_time_user_queue.length; index++) {
-                const user = real_time_user_queue[index];
-                hash[user.id] = user.username   
-                var isLiveBadge = document.createElement('span');
-                isLiveBadge.classList.add('badge', 'badge-light');
-                if (live_user_count > PREV_LENGTH){
-                    
-                    var list_group_item = document.getElementById('user-'+toString(user.id));
-                    
-                    list_group_item = document.createElement('a');
-                    list_group_item.setAttribute('id','user-'+toString(user.id))
-                    list_group_item.classList.add('list-group-item','list-group-item-action');
-                    list_group_item.innerHTML = hash[user.id];
-                    var profile_avatar = document.createElement('div');
-                    profile_avatar.classList.add('profile_avatar');
-                    
-                    list_group_item.appendChild(isLiveBadge)
-                    console.log(list_group_item)
-                    profile_avatar.appendChild(list_group_item);
-                    WAITING_Q.appendChild(profile_avatar); 
-                }
-                        // list_group_item.remove();
-            }
-
-                    console.log("hash", hash)
-                    hash = {};
-                    PREV_LENGTH = live_user_count;
-    
-}    
         
         
 function createMessageNode(message, sender, user_user_id ){
@@ -168,32 +134,77 @@ $.ajax({
     success: function(response){
         let wsData = response
         let rtUserHash = {};
-        console.log("Success!", wsData)
-        for(let key in wsData){
-            if (wsData.hasOwnProperty(key)){
-                console.log(wsData[key])
+        // console.log("Success!", wsData.user_list)
+        // for(let user in wsData.user_list){
+        //     console.log(wsData.user_list[user].username)
+        //     connected_clients.pushUserQDisplay(wsData.user_list[user].username, wsData.user_list[user].id);
+        // }
+        // for(let key in wsData){
+            //     if (wsData.hasOwnProperty(key)){
+                //         console.log(wsData[key])
+                
+                //     }
+                // }
+                
+                
+                userNotifySocket.onopen = function(ws_event){
+                    console.log("userNotifySocket AJAX __INIT__")
+                    console.warn("Ajax.onOpen EVENT: ",ws_event)
+                
+                    const request_user_id = JSON.parse(document.getElementById('request_user_id').textContent)
+                    const request_user_username = JSON.parse(document.getElementById('request_user_username').textContent)
+                    // connected_clients.pushUserQDisplay(request_user_username, request_user_id);
+                    // userNotifySocket.send()
+                    // if(jsonData.kind == "userConnectedNotification"){
+                    //     // console.log("Real Time User ",jsonData.real_time_user)
+                    //     // createUserNodes()
+                    //     connected_clients.pushUserQDisplay(jsonData.real_time_user, 1 );
+                    //     // createMessageNode("", jsonData.real_time_user.username, jsonData.real_time_user.id);
+                    //     console.log("json.userConnectedNotification: ", jsonData.real_time_user);
+                    // }
+                    // else if(jsonData.kind == "userDisconnectNotification"){
+                    //     var wq = document.getElementById('waiting_queue')
+                    //     console.log(wq);
+                    //     console.log("json.UserDisconnect: ", jsonData.real_time_user);
+                    // }
+                    // document.getElementById('waiting_queue').remove();
+        
+                    userNotifySocket.onmessage = function(event){
+                        
+                        let jsonData = JSON.parse(event.data)
+                        console.warn("Ajax.onOpen.onMessage EVENT: ")
+                        console.log(jsonData)
+                        var wq = document.getElementById('waiting_queue')
+                        if(jsonData.kind == "userConnectedNotification"){
+                            // console.log("Real Time User ",jsonData.real_time_user)
+                            // createUserNodes()
+                            // wq.innerHTML = "";
+                            connected_clients.pushUserQDisplay(jsonData.real_time_user.username, jsonData.real_time_user.id );
+                            // createMessageNode("", jsonData.real_time_user.username, jsonData.real_time_user.id);
+                            console.log("json.userConnectedNotification: ", jsonData.real_time_user);
+                        }
+                        else if(jsonData.kind == "userDisconnectNotification"){
+                            console.log(wq);
+                            console.log("json.UserDisconnect: ", jsonData.real_time_user);
+                            // wq.innerHTML = "";
+                            connected_clients.pushUserQDisplay(jsonData.real_time_user.username, jsonData.real_time_user.id );
+
+                        }
+                        // console.log(event.data)
+                    }
+                }
             }
-        }
-        console.log("Chat Socket AJAX __INIT__")
+        })
+        
+
+
         chatSocket.onopen = function(ws_event){
-            console.warn("Ajax.onOpen EVENT: ",ws_event)
-            chatSocket.onmessage = function(event){
-                event.preventDefault();
-                // let jsonData = JSON.parse(event)
-                console.warn("Ajax.onOpen.onMessage EVENT: ",event)
-            }
-        }
-    }
-})
-
-
-chatSocket.onopen = function(ws_event){
-    // if self.postMessage
+            // if self.postMessage
     // console.log("\n\nws.onOpen() EVENT:", ws_event  )    // logged_in_user_id = JSON.parse(document.getElementById('request_user_id').textContent);
     client_from_backend = ws_event;
     const request_user_id = JSON.parse(document.getElementById('request_user_id').textContent)
     const request_user_username = JSON.parse(document.getElementById('request_user_username').textContent)
-    connected_clients.setSavedClient( request_user_username, request_user_id );
+    // connected_clients.setSavedClient( request_user_username, request_user_id );
     // connected_clients.pushUserQDisplay(request_user_username, request_user_id);
     // connected_clients.UserQDisplay();
     // waiting_queue
@@ -202,7 +213,10 @@ chatSocket.onopen = function(ws_event){
 
 }
 // chatSocket.co
-var count = undefined;
+
+
+
+
 // once client side wS recieves a message,
 chatSocket.onmessage = function(event) {
     /** When user sends message through input field, create new div element and send to other Ws functions */
@@ -212,18 +226,19 @@ chatSocket.onmessage = function(event) {
     const waiting_queue_users = data['real_time_users'];
     user_username = data['user_username']
     
-    count = data['count'];
-    console.log(connected_clients.getCount())
-    if (connected_clients.getCount() < data.count){
+    console.log(data.message)
 
-        connected_clients.UserQDisplay();
-    }else{
+    // if (connected_clients.getCount() < data.count){
 
-        for (const key in waiting_queue_users) {
-            console.log("MESSAGE:", waiting_queue_users[key])
-            connected_clients.setSavedClient( waiting_queue_users[key].username, waiting_queue_users[key].id );
-        }
-    }
+        // connected_clients.UserQDisplay();
+    // }
+    // else{
+
+        // for (const key in waiting_queue_users) {
+            // console.log("MESSAGE:", waiting_queue_users[key])
+            // connected_clients.setSavedClient( waiting_queue_users[key].username, waiting_queue_users[key].id );
+        // }
+    // }
     
     
     
@@ -240,12 +255,12 @@ chatSocket.onmessage = function(event) {
         //     // console.log(user)
         //     user.username
         // }));
-        // createUserNodes(waiting_queue_users, user_user_id, data.count);
+        
         if (data.message){
             createMessageNode(data.message, user_username, user_user_id);
         }    
     }else{
-        console.warn("EMPTY ROOM", waiting_queue_users)
+        // console.warn("EMPTY ROOM", waiting_queue_users)
     }
 }
 

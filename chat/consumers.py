@@ -145,11 +145,11 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
         chat_data = {'user':this_user, 
                     'room':Room.objects.get(name=self.room_name), 
                     'msg_content':data}
-        # Message.objects.create(
-            # user=chat_data['user'], 
-            # room=chat_data['room'], 
-            # content=chat_data['msg_content']
-            # )
+        Message.objects.create(
+            user=chat_data['user'], 
+            room=chat_data['room'], 
+            content=chat_data['msg_content']
+            )
  
 
     @database_sync_to_async
@@ -252,19 +252,20 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
         await self.enqueue_user(self.scope['user'])
         real_time_users = await self.get_real_time_users_from_room(self.room_name)
         real_time_user_count = await self.real_time_user_count_db(self.room_name)
-        print(f"[Connecting] ... \tCurrently, {real_time_user_count}-real_time_users: {real_time_users}")
+        # print(f"[Connecting] ... \tCurrently, {real_time_user_count}-real_time_users: {real_time_users}")
         
         # Join Room Group through WS
         await self.channel_layer.group_add(
             self.room_group_name, 
             self.channel_name
         )
-        # Broadcast new User connecting to Group
+        # # Broadcast new User connecting to Group
         await self.channel_layer.group_send(
             self.room_group_name, {
                 "type": "user_broadcast",
                 "kind": "userConnectedNotification",
                 "real_time_users": real_time_users,
+                # "real_time_users":{'id':self.scope['user'].id, 'username':self.scope['user'].username},
                 "count" : real_time_user_count
             }    
         )
@@ -295,16 +296,17 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
         # print(self.user_queue)
         
         # Broadcase users and count to ALL in room
-        for record_user in real_time_users__disconnect:
+        # for record_user in real_time_users__disconnect:
 
-            await self.channel_layer.group_send(
-                self.room_group_name, {
-                    "type": "user_broadcast",
-                    "kind": "userDisconnectedNotification",
-                    "real_time_users": record_user,
-                    "count" : real_time_users_disconnect__count,
-                }
-            )
+        await self.channel_layer.group_send(
+            self.room_group_name, {
+                "type": "user_broadcast",
+                "kind": "userDisconnectedNotification",
+                "real_time_users": real_time_users__disconnect,
+                # "real_time_users": record_user,
+                "count" : real_time_users_disconnect__count,
+            }
+        )
         # Remove Group from channel_layer 
         await self.channel_layer.group_discard(
             self.room_group_name,
@@ -323,6 +325,7 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
                     command waas called.
         '''
         text_data_json = json.loads(text_data)
+        print("\n\n\tNew Message??: ", text_data_json)
         await self.new_message(text_data_json['message'])
         this_room_name = await self.get_current_room(self.room_name)
         saved_chatroom_messages = await self.fetch_saved_messages(this_room_name)
@@ -336,6 +339,7 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
             {
                 'type': 'chat_message',
                 'message': text_data_json['message'],
+                # 'message':saved_chatroom_messages,
                 'user_id' : self.user.id,
                 'user_username' : self.user.username,
                 "real_time_users": real_time_users,
@@ -369,23 +373,30 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
             DESCRIPTION:
                 > Asynchronous. Broadcast User(s) after they were Enqueud during the WS_server.CONNECT event to Client-Side Websocket.Receive. 
         """
-        # print("EVENT: ", event)
+        print("\n\nEVENT: ", event)
         # print("\n\ncountrr",event['countrr']) 
         # print(f"Consumer.Room_Group_Name: [{self.room_group_name}]")
         if event['kind'] == "userDisconnectedNotification":
             # Broadcast the Disconnect (i.e. what users are still live)
+            print("userDisconnectedNotification Here..")
+            print("\n\n",event['real_time_users'])
             for record_user in event['real_time_users']:
+                print(len(event['real_time_users']))
+                print(record_user)
                 await self.send(text_data=json.dumps({
                     "kind" : "userDisconnectedNotification",
+                    # "real_time_user": self.scope['user'].username,
                     "real_time_user": record_user,
                 }))
         elif event['kind'] == "userConnectedNotification":
             for record_user in event['real_time_users']:
-
+                # print(len(event['real_time_users']))
+                # print("userConnectedNotification Here..")
+                # print(record_user)
                 await self.send(text_data=json.dumps({ 
                     "kind": "userConnectedNotification",
                     "real_time_user": record_user,
-
+                    # "real_time_user" : self.scope['user'].username,
                     # "real_time_users": event['real_time_users'],
                     # "count" : event['count'],
                     # 'user_queue_nodes' : event['user_queue_nodes'],
@@ -402,11 +413,12 @@ class ChatMessageConsumer( AsyncWebsocketConsumer ):
         print("EVENT: ", event)
         print(f"Consumer.Room_Group_Name: [{self.room_group_name}]")
         for rt_user in event['real_time_users']:
-
+        # rt_user = event['real_time_users']
             await self.send(text_data=json.dumps({ 
                 "kind": "userConnectedNotification",
-                "real_time_user": rt_user,
+                # "real_time_user": self.scope['user'].username,
                 # "count" : event['count'],
+                "real_time_user": rt_user,
                 # 'user_queue_nodes' : event['user_queue_nodes'],
             }))
 

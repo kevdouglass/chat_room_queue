@@ -13,6 +13,17 @@
             <!-- Append Child MESSAGE element every time chat-message is sent -->
             <div class="chat-container">
                 <div id="chat-log">
+                    {% for chat in saved_chats.all %}
+                        {% if chat.user.username == request.user.username %}
+                            <div class="message sender">
+                                {{chat.content}}
+                            </div>
+                        {% else %}
+                            <div class="message receiver">
+                                {{chat.content}}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
                 </div>
             </div>
             
@@ -43,6 +54,20 @@
                     <hr>
                 </h2>
                 <div id='waiting_queue' class="profile_avatar">
+                    <!--
+                    -->
+                    {% for user in user_list %}
+
+                        <a href="" class="list-group-item list-group-item-action">
+                            <span class="badge badge-light">
+                                <span class="sr-only">
+                                    unread messages
+                                </span>
+                                {{ user.id }}
+                            </span>
+                            {{ user.username }} 
+                        </a>
+                        {%  endfor %} 
                 </div>
                 <!--  for user in user_list %}
                     <div id="waiting_queue_node" class="avatar avatar--small">

@@ -1,7 +1,7 @@
 from django.http import request
 from django.http.response import JsonResponse
 from django.shortcuts import redirect, render
-from .models import Room
+from .models import Message, Room
 from django.contrib.auth.models import User
 from .forms import RoomForm
 
@@ -51,17 +51,17 @@ async def broadcast_users(data):
         print(f"[{data['user_name']}] Entered: [{data['room_name']}]")
         realtime_user_waitingQ = data['user_list']
         realtime_user_waitingQ__count = len(realtime_user_waitingQ)
-        print(realtime_user_waitingQ)
-        print(realtime_user_waitingQ__count)
+        # print(realtime_user_waitingQ)
+        # print(realtime_user_waitingQ__count)
         # realtime_user_waitingQ.count()
         print(f"^^View.Room_Group_Name: [{room_group_name}]")
-        await sync_channel_layer.group_send(
-            room_group_name,{
-                "type": "user_notification",
-                "real_time_users": realtime_user_waitingQ,
-                "countr" : realtime_user_waitingQ__count,
-            }
-        )
+        # await sync_channel_layer.group_send(
+        #     room_group_name,{
+        #         "type": "user_notification",
+        #         "real_time_users": realtime_user_waitingQ,
+        #         "countr" : realtime_user_waitingQ__count,
+        #     }
+        # )
     except AssertionError:
         print("##DEBUG. No Channel Layer To SEND to")
     # return redirect(to='fetch-room-data')
@@ -100,21 +100,29 @@ def removeStaleUsers(request, room_name):
             del user
         # user.
     print("[Manage.py Stale Users]: ",Room.objects.get(name=room_name).users)
+
+
 # create-rooms
 def room(request, room_name:str):
     # print(f"Req.Method: {request}")
     # User.objects.exclude(username=request.user.username)
-    removeStaleUsers(request, room_name)
+    # removeStaleUsers(request, room_name)
 
     this_channel = get_channel_layer()
     print(this_channel)
-    real_time_users = Room.objects.get(name=room_name).users.all()
+    real_time_room = Room.objects.get(name=room_name)
+    real_time_users = real_time_room.users.all()
     userHash = []
     for record in real_time_users:
         userHash.append({'id':record.id, 'username':record.username})
+
+    chats = Message.objects.filter(room=real_time_room)
+    # Message.objects.get()
+    # for chat in 
  
     return render(request, 'chat/msg_room.html', { 
         'room_name': room_name,
-        'user_list': userHash,
         'user_name': request.user.username,
+        'user_list': userHash,
+        'saved_chats' : chats,
     })
